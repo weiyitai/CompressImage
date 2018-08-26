@@ -78,27 +78,33 @@ public class ImageUtil {
         return BitmapUtil.decodeBitmapFromFile(file, maxWidth, maxHeight, bitmapConfig);
     }
 
-    public void setMaxWidth(int maxWidth) {
+    public ImageUtil setMaxWidth(int maxWidth) {
         this.maxWidth = maxWidth;
+        return this;
     }
 
-    public void setMaxHeight(int maxHeight) {
+    public ImageUtil setMaxHeight(int maxHeight) {
         this.maxHeight = maxHeight;
+        return this;
     }
 
-    public void setCompressFormat(Bitmap.CompressFormat compressFormat) {
+    public ImageUtil setCompressFormat(Bitmap.CompressFormat compressFormat) {
         this.compressFormat = compressFormat;
+        return this;
     }
 
-    public void setBitmapConfig(Bitmap.Config bitmapConfig) {
+    public ImageUtil setBitmapConfig(Bitmap.Config bitmapConfig) {
         this.bitmapConfig = bitmapConfig;
+        return this;
     }
 
-    public void setQuality(int quality) {
+    public ImageUtil setQuality(int quality) {
         this.quality = quality;
+        return this;
     }
 
-    public void setDestinationDirPath(String destinationDirPath) {
+    public ImageUtil setDestinationDirPath(String destinationDirPath) {
         this.destinationDirPath = destinationDirPath;
+        return this;
     }
 }

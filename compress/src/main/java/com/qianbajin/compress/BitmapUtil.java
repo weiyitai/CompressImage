@@ -55,6 +55,7 @@ public class BitmapUtil {
         options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
         options.inJustDecodeBounds = false;
 
+        Log.d("BitmapUtil", "options.outWidth:" + options.outWidth + "  options.outHeight:" + options.outHeight);
         Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath(), options);
 
         Log.d("ImageUtil", "scaledBitmap.getWidth():" + bitmap.getWidth() + "  scaledBitmap.getHeight():" + bitmap.getHeight());

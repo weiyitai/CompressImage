@@ -1,7 +1,9 @@
 package com.qianbajin.compressimage;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -26,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private LayoutInflater mInflater;
     private LinearLayout mLlContainer;
     private File mSrcFile;
+    private File mDesFile;
 
 //    private ImageView mIvSrc;
 //    private TextView mOriginalSize;
@@ -65,9 +68,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         item.setLayoutParams(params);
         View childAt = mLlContainer.getChildAt(index);
         mLlContainer.removeView(childAt);
-        mLlContainer.addView(item, index, params);
-        item.setOnClickListener(v -> {
-            v.setTag(mHsv.indexOfChild(v));
+        int childCount = mLlContainer.getChildCount();
+        if (index == childCount) {
+            mLlContainer.addView(item, index, params);
+        } else {
+            mLlContainer.addView(item, index - 1, params);
+
+        }
+        img.setOnClickListener(v -> {
+            v.setTag(index);
             onClick(v);
         });
     }
@@ -92,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (requestCode == 1 && data != null) {
             try {
                 mSrcFile = FileUtil.from(this, data.getData());
-                addChild(0, mSrcFile.getName(), mSrcFile);
+                addChild(0, "original", mSrcFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -109,7 +118,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     intent.setType("image/*");
                     startActivityForResult(intent, 1);
                 } else {
-
+                    if (mDesFile != null) {
+                        Intent intent = new Intent();
+                        intent.setDataAndType(Uri.fromFile(mDesFile), "image/*");
+                        startActivity(intent);
+                    }
                 }
                 break;
 //            case R.id.iv_img1:
@@ -130,8 +143,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void btn2(View view) {
         if (mSrcFile != null) {
             try {
-                File file = ImageUtil.get(this).compressToFile(mSrcFile);
-                addChild(1, file.getName(), file);
+                mDesFile = ImageUtil.get(this)
+                        .setMaxHeight(800)
+                        .compressToFile(mSrcFile);
+                addChild(1, "JPEG", mDesFile);
             } catch (IOException e) {
                 e.printStackTrace();
                 Toast.makeText(this, "发生异常" + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -142,7 +157,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void btn3(View view) {
-
+        if (mSrcFile != null) {
+            try {
+                mDesFile = ImageUtil.get(this)
+                        .setMaxHeight(1280)
+                        .setCompressFormat(Bitmap.CompressFormat.WEBP)
+                        .compressToFile(mSrcFile);
+                addChild(2, "WEBP", mDesFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(this, "发生异常" + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(this, "请先选择图片", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private static String getReadableFileSize(long size) {
