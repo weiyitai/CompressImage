@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">CompressImage</string>
+    <string name="compress1">压缩</string>
+    <string name="ori_img">original image</string>
+    <string name="choice">选择图片</string>
+    <string name="compress_jpeg">压缩成jpeg</string>
+    <string name="compress_webp">压缩成webp</string>
+</resources>
