@@ -10,7 +10,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -24,18 +23,11 @@ import java.text.DecimalFormat;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private HorizontalScrollView mHsv;
     private LayoutInflater mInflater;
     private LinearLayout mLlContainer;
-    private File mSrcFile;
-    private File mDesFile;
-
-//    private ImageView mIvSrc;
-//    private TextView mOriginalSize;
-//    private ImageView mIvImg1;
-//    private TextView mImg1Size;
-//    private ImageView mIvImg2;
-//    private TextView mImg2Size;
+    private File mFileSrc;
+    private File mFileJpeg;
+    private File mFileWebp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,55 +35,41 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         initView();
 
-        String fileSize = getReadableFileSize(16 * 1024 * 1024);
-        Log.d("MainActivity", "fileSize:" + fileSize);
-
         mInflater = LayoutInflater.from(this);
-        addChild(0, "original img", null);
+        addChild(0, "original img");
+        addChild(1, "JPEG");
+        addChild(2, "WEBP");
+
     }
 
-    private void addChild(int index, String name, File file) {
+    private void addChild(int index, String name) {
         LinearLayout item = (LinearLayout) mInflater.inflate(R.layout.item_image, null);
         ImageView img = item.findViewById(R.id.iv_src);
-        TextView tvName = item.findViewById(R.id.tv_name);
-        TextView tvSize = item.findViewById(R.id.tv_size);
-        if (file != null) {
-            img.setImageBitmap(BitmapFactory.decodeFile(file.getAbsolutePath()));
-        } /*else {
-            img.setBackgroundColor(Color.GRAY);
-        }*/
-        tvName.setText(name);
-        tvSize.setText(file != null ? getReadableFileSize(file.length()) : "0 MB");
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.setMarginStart(30);
-        params.setMarginEnd(30);
-        item.setLayoutParams(params);
-        View childAt = mLlContainer.getChildAt(index);
-        mLlContainer.removeView(childAt);
-        int childCount = mLlContainer.getChildCount();
-        if (index == childCount) {
-            mLlContainer.addView(item, index, params);
-        } else {
-            mLlContainer.addView(item, index - 1, params);
-
-        }
+        ViewGroup.LayoutParams params = img.getLayoutParams();
+        Log.d("MainActivity", "params.width:" + params.width + "  params.height:" + params.height);
+        params.width = params.height * 9 / 16;
+        img.setLayoutParams(params);
+        mLlContainer.addView(item, index);
         img.setOnClickListener(v -> {
             v.setTag(index);
             onClick(v);
         });
+        setImage(index, name, null);
+    }
+
+    private void setImage(int index, String name, File file) {
+        View childAt = mLlContainer.getChildAt(index);
+        ImageView imageView = childAt.findViewById(R.id.iv_src);
+        if (file != null) {
+            imageView.setImageBitmap(BitmapFactory.decodeFile(file.getAbsolutePath()));
+        }
+        TextView tvName = childAt.findViewById(R.id.tv_name);
+        TextView tvSize = childAt.findViewById(R.id.tv_size);
+        tvName.setText(name);
+        tvSize.setText(file != null ? getReadableFileSize(file.length()) : "0 MB");
     }
 
     private void initView() {
-//        mIvSrc = findViewById(R.id.iv_src);
-//        mIvSrc.setOnClickListener(this);
-//        mOriginalSize = findViewById(R.id.original_size);
-//        mIvImg1 = findViewById(R.id.iv_img1);
-//        mIvImg1.setOnClickListener(this);
-//        mImg1Size = findViewById(R.id.img1_size);
-//        mIvImg2 = findViewById(R.id.iv_img2);
-//        mIvImg2.setOnClickListener(this);
-//        mImg2Size = findViewById(R.id.img2_size);
-        mHsv = findViewById(R.id.hsv);
         mLlContainer = findViewById(R.id.ll_container);
     }
 
@@ -100,8 +78,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && data != null) {
             try {
-                mSrcFile = FileUtil.from(this, data.getData());
-                addChild(0, "original", mSrcFile);
+                mFileSrc = FileUtil.from(this, data.getData());
+                Log.d("MainActivity", mFileSrc.getAbsolutePath());
+                setImage(0, "original", mFileSrc);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -113,22 +92,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.iv_src:
                 int index = (int) v.getTag();
+                File file;
                 if (index == 0) {
-                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                    intent.setType("image/*");
-                    startActivityForResult(intent, 1);
+                    file = mFileSrc;
+                } else if (index == 1) {
+                    file = mFileJpeg;
                 } else {
-                    if (mDesFile != null) {
-                        Intent intent = new Intent();
-                        intent.setDataAndType(Uri.fromFile(mDesFile), "image/*");
+                    file = mFileWebp;
+                }
+                if (file != null) {
+                    Intent intent = new Intent();
+                    intent.setDataAndType(Uri.fromFile(file), "image/*");
+                    try {
+                        intent.setPackage("com.alensw.PicFolder");
                         startActivity(intent);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        startActivity(intent);
+                        Log.d("MainActivity", e.getMessage());
                     }
+                } else {
+                    Toast.makeText(this, "file invalid", Toast.LENGTH_SHORT).show();
                 }
                 break;
-//            case R.id.iv_img1:
-//                break;
-//            case R.id.iv_img2:
-//                break;
             default:
                 break;
         }
@@ -141,35 +127,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void btn2(View view) {
-        if (mSrcFile != null) {
+        if (mFileSrc != null) {
             try {
-                mDesFile = ImageUtil.get(this)
-                        .setMaxHeight(800)
-                        .compressToFile(mSrcFile);
-                addChild(1, "JPEG", mDesFile);
+                mFileJpeg = ImageUtil.get(this)
+                        .setMaxWidth(720)
+                        .setMaxHeight(1280)
+                        .compressToFile(mFileSrc);
+                setImage(1, "JPEG", mFileJpeg);
             } catch (IOException e) {
                 e.printStackTrace();
-                Toast.makeText(this, "发生异常" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         } else {
-            Toast.makeText(this, "请先选择图片", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.choice_pic_first, Toast.LENGTH_SHORT).show();
         }
     }
 
     public void btn3(View view) {
-        if (mSrcFile != null) {
+        if (mFileSrc != null) {
             try {
-                mDesFile = ImageUtil.get(this)
+                mFileWebp = ImageUtil.get(this)
                         .setMaxHeight(1280)
                         .setCompressFormat(Bitmap.CompressFormat.WEBP)
-                        .compressToFile(mSrcFile);
-                addChild(2, "WEBP", mDesFile);
+                        .compressToFile(mFileSrc);
+                setImage(2, "WEBP", mFileJpeg);
             } catch (IOException e) {
                 e.printStackTrace();
-                Toast.makeText(this, "发生异常" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         } else {
-            Toast.makeText(this, "请先选择图片", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.choice_pic_first, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -181,4 +168,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
         return new DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
     }
+
 }

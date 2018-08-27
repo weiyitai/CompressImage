@@ -23,9 +23,6 @@ public class BitmapUtil {
     static File compressImage(File srcFile, int reqWidth, int reqHeight,
                               Bitmap.CompressFormat compressFormat, Bitmap.Config bitmapConfig,
                               int quality, String destinationDirPath) throws IOException {
-        long length = srcFile.length();
-        Log.d("ImageUtil", "length:" + length + "  imageFile.length():" + getReadableFileSize(length));
-
         FileOutputStream fos = null;
         File desFile = new File(destinationDirPath, srcFile.getName());
         File parentFile = desFile.getParentFile();
@@ -46,7 +43,7 @@ public class BitmapUtil {
     static Bitmap decodeBitmapFromFile(File imageFile, int reqWidth, int reqHeight, Bitmap.Config bitmapConfig) throws IOException {
         // First decode with inJustDecodeBounds=true to check dimensions
         long length = imageFile.length();
-        Log.d("ImageUtil", "length:" + length + "  imageFile.length():" + getReadableFileSize(length));
+        Log.d("BitmapUtil", "length:" + length + "  imageFile.length():" + getReadableFileSize(length));
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(imageFile.getAbsolutePath(), options);
@@ -56,12 +53,11 @@ public class BitmapUtil {
         options.inJustDecodeBounds = false;
 
         Log.d("BitmapUtil", "options.outWidth:" + options.outWidth + "  options.outHeight:" + options.outHeight);
+        Log.d("BitmapUtil", "reqWidth:" + reqWidth + "  reqHeight:" + reqHeight);
         Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath(), options);
 
-        Log.d("ImageUtil", "scaledBitmap.getWidth():" + bitmap.getWidth() + "  scaledBitmap.getHeight():" + bitmap.getHeight());
-
         int byteCount = bitmap.getAllocationByteCount();
-        Log.d("ImageUtil", "byteCount:" + byteCount + "  scaledBitmap:" + getReadableFileSize(byteCount));
+        Log.d("BitmapUtil", "byteCount:" + byteCount + "  scaledBitmap:" + getReadableFileSize(byteCount));
 
         int[] ints = calculateConfig(options, reqWidth, reqHeight);
         int width = ints[0];
@@ -69,8 +65,8 @@ public class BitmapUtil {
 
         Bitmap scaledBitmap = Bitmap.createBitmap(width, height, bitmapConfig);
         Matrix scaleMatrix = new Matrix();
-        float ratioX = width / (float) scaledBitmap.getWidth();
-        float ratioY = height / (float) scaledBitmap.getHeight();
+        float ratioX = width / (float) options.outWidth;
+        float ratioY = height / (float) options.outHeight;
         scaleMatrix.setScale(ratioX, ratioY, 0, 0);
 
         Canvas canvas = new Canvas(scaledBitmap);
@@ -120,11 +116,12 @@ public class BitmapUtil {
             // 取最接近的边长作为固定边长,另一边等比缩放
             float maxRatio = (float) maxReq / maxSize;
             float minRatio = (float) minReq / minSize;
-            Log.d("ImageUtil", "maxRatio:" + maxRatio + "  minRatio:" + minRatio);
-            // 按要求固定的一边
-            // 以长边作为基准
+            Log.d("BitmapUtil", "maxRatio:" + maxRatio + "  minRatio:" + minRatio);
+            // 以长边作为基准,为了保留质量,图片更清晰
+
+            
             if (maxRatio < minRatio) {
-                if (maxReq == reqWidth) {
+                if (reqWidth == maxReq) {
                     widthHeight[0] = reqWidth;
                     widthHeight[1] = reqWidth * height / width;
                 } else {
@@ -133,7 +130,7 @@ public class BitmapUtil {
                 }
             } else {
                 // 以短边作为基准
-                if (minReq == reqWidth) {
+                if (reqWidth == maxReq) {
                     widthHeight[0] = reqWidth;
                     widthHeight[1] = reqWidth * height / width;
                 } else {

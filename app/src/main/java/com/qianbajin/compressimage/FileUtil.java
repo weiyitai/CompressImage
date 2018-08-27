@@ -20,6 +20,7 @@ import java.io.OutputStream;
  * GitHub     : https://github.com/zetbaitsu
  */
 class FileUtil {
+
     private static final int EOF = -1;
     private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 
@@ -31,7 +32,7 @@ class FileUtil {
         InputStream inputStream = context.getContentResolver().openInputStream(uri);
         String fileName = getFileName(context, uri);
         String[] splitName = splitFileName(fileName);
-        File tempFile = File.createTempFile(splitName[0], splitName[1]);
+        File tempFile = File.createTempFile(splitName[0], splitName[1], context.getExternalFilesDir(null));
         tempFile = rename(tempFile, fileName);
         tempFile.deleteOnExit();
         FileOutputStream out = null;

@@ -5,4 +5,5 @@
     <string name="choice">选择图片</string>
     <string name="compress_jpeg">压缩成jpeg</string>
     <string name="compress_webp">压缩成webp</string>
+    <string name="choice_pic_first">请先选择图片</string>
 </resources>
