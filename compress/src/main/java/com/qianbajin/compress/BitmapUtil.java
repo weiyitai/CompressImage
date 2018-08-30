@@ -41,10 +41,10 @@ public class BitmapUtil {
     }
 
     static Bitmap decodeBitmapFromFile(File imageFile, int reqWidth, int reqHeight, Bitmap.Config bitmapConfig) throws IOException {
-        // First decode with inJustDecodeBounds=true to check dimensions
         long length = imageFile.length();
         Log.d("BitmapUtil", "length:" + length + "  imageFile.length():" + getReadableFileSize(length));
         BitmapFactory.Options options = new BitmapFactory.Options();
+        // 设置为true 是为了获取图片的宽高,不会将图片加载到内存中
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(imageFile.getAbsolutePath(), options);
 
@@ -62,17 +62,22 @@ public class BitmapUtil {
         int[] ints = calculateConfig(options, reqWidth, reqHeight);
         int width = ints[0];
         int height = ints[1];
+        Bitmap scaledBitmap;
+        // 如果原图的宽高都大于要求的,则进行比例缩放
+        if (options.outWidth > reqWidth && options.outHeight > reqHeight) {
+            scaledBitmap = Bitmap.createBitmap(width, height, bitmapConfig);
+            Matrix scaleMatrix = new Matrix();
+            float ratioX = width / (float) options.outWidth;
+            float ratioY = height / (float) options.outHeight;
+            scaleMatrix.setScale(ratioX, ratioY, 0, 0);
 
-        Bitmap scaledBitmap = Bitmap.createBitmap(width, height, bitmapConfig);
-        Matrix scaleMatrix = new Matrix();
-        float ratioX = width / (float) options.outWidth;
-        float ratioY = height / (float) options.outHeight;
-        scaleMatrix.setScale(ratioX, ratioY, 0, 0);
-
-        Canvas canvas = new Canvas(scaledBitmap);
-        canvas.setMatrix(scaleMatrix);
-        canvas.drawBitmap(bitmap, 0, 0, new Paint(Paint.FILTER_BITMAP_FLAG));
-        bitmap.recycle();
+            Canvas canvas = new Canvas(scaledBitmap);
+            canvas.setMatrix(scaleMatrix);
+            canvas.drawBitmap(bitmap, 0, 0, new Paint(Paint.FILTER_BITMAP_FLAG));
+            bitmap.recycle();
+        } else {
+            scaledBitmap = bitmap;
+        }
 
         // 检查图片的方向并进行旋转
         ExifInterface exif = new ExifInterface(imageFile.getAbsolutePath());
@@ -89,6 +94,8 @@ public class BitmapUtil {
             matrix.postRotate(270);
         }
         scaledBitmap = Bitmap.createBitmap(scaledBitmap, 0, 0, scaledBitmap.getWidth(), scaledBitmap.getHeight(), matrix, true);
+        Log.d("BitmapUtil", "scaledBitmap.getWidth():" + scaledBitmap.getWidth()
+                + "  scaledBitmap.getHeight():" + scaledBitmap.getHeight());
         return scaledBitmap;
     }
 
@@ -117,10 +124,8 @@ public class BitmapUtil {
             float maxRatio = (float) maxReq / maxSize;
             float minRatio = (float) minReq / minSize;
             Log.d("BitmapUtil", "maxRatio:" + maxRatio + "  minRatio:" + minRatio);
-            // 以长边作为基准,为了保留质量,图片更清晰
-
-            
-            if (maxRatio < minRatio) {
+            // 以短边作为基准,为了保留质量,图片更清晰
+            if (maxRatio > minRatio) {
                 if (reqWidth == maxReq) {
                     widthHeight[0] = reqWidth;
                     widthHeight[1] = reqWidth * height / width;
@@ -129,14 +134,14 @@ public class BitmapUtil {
                     widthHeight[0] = reqHeight * width / height;
                 }
             } else {
-                // 以短边作为基准
-                if (reqWidth == maxReq) {
+                if (reqWidth == minReq) {
                     widthHeight[0] = reqWidth;
                     widthHeight[1] = reqWidth * height / width;
                 } else {
                     widthHeight[1] = reqHeight;
                     widthHeight[0] = reqHeight * width / height;
                 }
+                // 以短边作为基准
             }
         }
         Log.d("BitmapUtil", "ints:" + widthHeight[0] + "  " + widthHeight[1]);
@@ -144,11 +149,16 @@ public class BitmapUtil {
     }
 
     /**
-     * 计算inSampleSize,在质量压缩中,inSampleSize是一个最大的影响参数,调用Bitmap bitmap = BitmapFactory.decodeFile(String pathName, Options opts)时
+     * 计算inSampleSize,在生成Bitmap时,inSampleSize是一个最大的影响参数,调用Bitmap bitmap = BitmapFactory.decodeFile(String pathName, Options opts)时
      * opts 如果传入null 假如一张 2560 x 1440 的图片,使用ARGB_8888格式(默认)加载到内存,占用的内存为 2560 x 1440 x 4 = 14745600 (字节) = 14.0625 MB,
-     * 图片尺寸太大,如果opts不做限制,很容易发生oom,如果inSampleSize = 2,那么生成的bitmap的宽高分别为原来的 1/2,那么图片占用的像素为原来的 1/4,极大的缩小了
-     * 占用的内存.
+     * 图片尺寸太大,如果opts不做限制,很容易发生oom,如果inSampleSize = 2,那么生成的bitmap的宽高分别为原来的 1/2,那么图片占用的像素为原来的 1/4,
+     * 上图加载到内存只占用   2560 x 1440 x 4 / 4 = 3686400 (字节) = 3.515625 MB 极大的缩小了占用的内存.
      * inSampleSize 只能为2的n次幂,假如 inSampleSize = 7,那么系统会向下取整为4 , inSampleSize最小只能为1,小于1会被视为1处理
+     *
+     * @param options   options
+     * @param reqWidth  设置的图片宽度
+     * @param reqHeight 设置的图片高度
+     * @return inSampleSize压缩参数
      */
     private static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         int longSize = Math.max(options.outWidth, options.outHeight);
@@ -161,7 +171,6 @@ public class BitmapUtil {
             // 长边对长边,短边对短边,取比例的最小值
             int longRatio = longSize / longReqSize;
             int shortRatio = shortSize / shortReqSize;
-
             inSampleSize = Math.min(longRatio, shortRatio);
         }
         Log.d("BitmapUtil", "inSampleSize:" + inSampleSize);
@@ -172,7 +181,7 @@ public class BitmapUtil {
     }
 
     /**
-     * 计算当前inSampleSize下生成的bitmap是否大于 16 MB,如果大于则向上取整,防止oom
+     * 计算当前inSampleSize下生成的bitmap是否大于 16 MB,如果大于则inSampleSize向上取整,防止oom
      *
      * @param options      options
      * @param inSampleSize 采样率
@@ -186,7 +195,7 @@ public class BitmapUtil {
         // 允许最大占用内存 16 MB
         int maxPixel = 16 * 1024 * 1024;
         while (pixel / inSampleSize > maxPixel) {
-            inSampleSize++;
+            inSampleSize *= 2;
         }
         return inSampleSize;
     }

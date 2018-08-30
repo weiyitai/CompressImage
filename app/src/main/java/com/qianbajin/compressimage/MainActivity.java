@@ -61,7 +61,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         View childAt = mLlContainer.getChildAt(index);
         ImageView imageView = childAt.findViewById(R.id.iv_src);
         if (file != null) {
-            imageView.setImageBitmap(BitmapFactory.decodeFile(file.getAbsolutePath()));
+//            BitmapFactory.decodeFile()
+            // 用BitmapFactory.decodeFile(),入过原图较大会内存溢出,使用setImageURI则不会
+            imageView.setImageURI(Uri.fromFile(file));
         }
         TextView tvName = childAt.findViewById(R.id.tv_name);
         TextView tvSize = childAt.findViewById(R.id.tv_size);
