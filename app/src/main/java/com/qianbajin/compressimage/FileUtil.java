@@ -7,6 +7,7 @@ import android.provider.OpenableColumns;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -101,6 +102,10 @@ class FileUtil {
             }
         }
         return newFile;
+    }
+
+    public static boolean copyFile(File src, File des) throws IOException {
+        return copy(new FileInputStream(src), new FileOutputStream(des)) > 0;
     }
 
     private static long copy(InputStream input, OutputStream output) throws IOException {

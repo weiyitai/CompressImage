@@ -159,6 +159,11 @@
             android:layout_height="wrap_content"
             android:onClick="btn3"
             android:text="@string/compress_webp"/>
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="btn4"
+            android:text="拍照"/>
 
     </LinearLayout>
 </ScrollView>
